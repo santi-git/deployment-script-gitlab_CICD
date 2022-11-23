@@ -16,7 +16,7 @@ extraPodConfig:
 
 container:
   pullPolicy: Always
-  port: 2222
+  port: #yourport
 
 hpa:
   required: false
