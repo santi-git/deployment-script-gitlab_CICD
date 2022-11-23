@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Values.namespace }}
+  name: {{ .Release.Name }}-app
+  namespace: {{ .Values.namespace }}
+spec:
+  {{- include "replica" . | nindent 2 }}
+  selector:
+    matchLabels:
+      {{- include "labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "labels" . | nindent 8 }}
+      annotations:
+          rollme: {{ dateInZone "2006-01-02 15:04:05" .Release.Time  "UTC" | quote }}
+    spec:
+      imagePullSecrets: 
+        - name: registry-credentials
+      containers:
+        - name: {{ .Release.Name }}
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.container.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.container.port }}
+          envFrom:
+            - configMapRef:
+                name: configmap-{{ .Release.Name }}
+          {{- include "podResources" . | nindent 10 -}}

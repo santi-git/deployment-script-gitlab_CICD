@@ -1,0 +1,17 @@
+ingress:
+  host: #DNS
+  acm: #AWS certificate ARN link
+
+nodeAffinity:
+  require: false
+
+hpa:
+  required: true
+  maxReplicas: 5
+  minReplicas: 1
+  cpuTarget: 70
+  memoryTarget: 60
+
+environments:
+  TZ: Asia/Yangon
+  NODE_ENV: production-eks

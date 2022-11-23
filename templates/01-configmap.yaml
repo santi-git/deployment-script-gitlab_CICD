@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+  name: configmap-{{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+data:
+{{- range $key, $val := .Values.environments }}
+  {{ $key }}: {{ $val | quote }}
+{{- end}}

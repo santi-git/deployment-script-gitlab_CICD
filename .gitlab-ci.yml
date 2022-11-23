@@ -1,0 +1,71 @@
+#Run
+image: docker:stable
+services:
+  - docker:18.09-dind
+
+variables:
+  CONTAINER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  NAMESPACE: #yournamespace in eks
+  AGENT_NAME: #git agent name (repo with full path :**)
+  APPLICATION_FOLDER: ./
+  DEPLOYMENT_FOLDER: deployment
+  SECURES: $secure_prod
+
+stages:
+  - fetch-artifact
+  - build-artifact
+  - deploy
+
+fetch-artifact:
+  stage: fetch-artifact
+  image: #gitlab registery image 
+
+# If you have some of secrets valuse are in your code and store in aws secretmanager use this below stage.
+
+#   script:
+#     - aws secretsmanager get-secret-value --secret-id secretsmanager_full_path --region ap-southeast-1 --query SecretString --output text> ./secret.json
+#   artifacts:
+#     paths:
+#       - ./secret.json
+#   only:
+#     - production-release
+
+# build-artifact:
+#   stage: build-artifact
+#   before_script:
+#     - apk add jq --quiet
+#     - cat secret.json
+#     - key1"$(cat secret.json | jq -r '."key1"')"
+#     - key2="$(cat secret.json | jq -r '."key2"')"
+#     - key3="$(cat secret.json | jq -r '."key3"')"
+#     - key4="$(cat secret.json | jq -r '."key4"')"
+#     - key5=$(echo "$key5" | sed -e 's/&/\\\&/g' -e 's/\//\\\//g' )
+#     - sed -i -e "s/key1/${key1}/g" api/services/constant.js
+#     - sed -i -e "s/key2/${key2}/g" api/services/constant.js
+#     - sed -i -e "s/key5/${key5}/g" api/services/constant.js
+#     - rm -rf api/services/constant.js-e
+#     - cat api/services/constant.js
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker build --no-cache -t $CONTAINER_IMAGE $APPLICATION_FOLDER
+    - docker push $CONTAINER_IMAGE
+  only:
+    - production-release
+  dependencies:
+    - fetch-artifact
+
+deploy:
+  stage: deploy
+  image:
+    name: dtzar/helm-kubectl
+    entrypoint: [""]
+  before_script:
+    - kubectl config get-contexts
+    - kubectl config use-context $AGENT_NAME
+  script:
+    - helm upgrade --install ${NAMESPACE} --namespace ${NAMESPACE} --create-namespace -f ${DEPLOYMENT_FOLDER}/values/prod.yaml --set namespace=$NAMESPACE --set image=${CONTAINER_IMAGE} ${DEPLOYMENT_FOLDER}
+  dependencies:
+    - build-artifact
+    - fetch-artifact
+  only:
+    - production-release
