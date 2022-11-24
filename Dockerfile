@@ -27,7 +27,7 @@ RUN date
 #4. Application
 ###
 
-EXPOSE 8080
+EXPOSE #your port
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY package.json /usr/src/app/package.json
