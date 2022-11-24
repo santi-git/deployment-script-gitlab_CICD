@@ -14,4 +14,4 @@ hpa:
 
 environments:
   TZ: Asia/Yangon
-  NODE_ENV: production-eks
+#   NODE_ENV: production-eks
